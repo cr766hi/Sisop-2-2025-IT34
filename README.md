@@ -4,76 +4,71 @@ Member :
 2. Naila Cahyarani Idelia (5027241063)
 3. Daniswara Fausta Novanto (5027241050)
 
-<div align=center>
+
 
 # Soal Modul 2
 
-### a.
-Downlaod file starterkitnya terlebih dahulu dengan
-```bash
-wget "https://drive.usercontent.google.com/u/0/uc?id=1_5GxIGfQr3mNKuavJbte_AoRkEQLXSKS&export=download" -O File.zip
-```
-Setelah itu unzip filenya dengan 
-```bash
-unzip File.zip -d starter_kit
-```
-Lalu buatlah *file* starterkit.c
+pertama-tama download dulu file starterkitnya
+
+![image](https://github.com/user-attachments/assets/8167c126-4682-436f-8e1d-8c7d6bfcf1e2)
+
+setelah di download, file starterkit langsung di unzip
+
+lalu buatlah code dengan
+
 ```bash
 nano starterkit.c
 ```
-setelah itu masukkan kodenya
-```bash
-// Fungsi decode Base64
-char* decode_base64(const char* input) {
-    int len = strlen(input);
-    char* output = malloc(len);
-    int val = 0, valb = -8;
-    int pos = 0;
-    printf("Decoding input: %s\n", input);
 
-    for (int i = 0; i < len; i++) {
-        char* ptr = strchr(base64_map, input[i]);
-        if (!ptr) continue;
-        val = (val << 6) + (ptr - base64_map);
-        valb += 6;
-        if (valb >= 0) {
-            output[pos++] = (val >> valb) & 0xFF;
-            valb -= 8;
-        }
-    }
-    output[pos] = '\0';
+berikut adalah fungsi codenya :
 
-    printf("Decoded output: %s\n", output);  
+### 1. **Deklarasi Variabel dan Fungsi Utama**
+Di awal kode, kita mendeklarasikan beberapa variabel penting:
+- `char *pidfile = "decrypt.pid";`  
+  Menyimpan nama file PID yang digunakan untuk melacak proses dekripsi.
+  
+- Fungsi `main()` akan menangani parsing argumen dari command line menggunakan `getopt_long()`.
 
-    return output;
-}
+### 2. **Fungsi `decrypt()`**
+Fungsi ini bertanggung jawab untuk:
+- Membuat direktori quarantine dan menjalankan daemon
+- Menggunakan fungsi `base64_decode()` untuk mendekripsi nama file yang terenkripsi dengan Base64.
+- Mengubah nama file yang telah didekripsi dan memindahkannya ke direktori `starter_kit` yang sama.
+![image](https://github.com/user-attachments/assets/7a5ed39d-ec2b-4ec7-9241-58b8d8864cff)
 
-// Fungsi untuk menulis log aktivitas
-void write_log(char *message) {
-    FILE *log = fopen("activity.log", "a");  
-    if (log) {
-        time_t now = time(NULL);
-        struct tm *t = localtime(&now);
-        fprintf(log, "[%02d-%02d-%d][%02d:%02d:%02d] - %s\n",
-            t->tm_mday, t->tm_mon + 1, t->tm_year + 1900,
-            t->tm_hour, t->tm_min, t->tm_sec, message);
-        fclose(log);
-    } else {
-        perror("Failed to open log file");
-    }
-}
-```
-berikut adalah codenya, decode_base64 mendekodekan string yang dienkode dengan Base64 menjadi data asli menggunakan tabel karakter Base64 dan mengembalikan hasilnya dalam bentuk string. Sedangkan fungsi write_log mencatat pesan log beserta timestamp ke dalam file activity.log 
+### 3. **Fungsi `move_to_quarantine()`**
+Fungsi ini bertugas untuk:
+- Memindahkan file dari direktori `starter_kit` ke `quarantine`.
+- juga mengenkripsi isi dari starter_kit.
+![image](https://github.com/user-attachments/assets/89944b79-273f-4dce-ab40-222721d928c6)
 
-### b.
 
-Setelah mendownload starter kit tersebut, Mafuyu ternyata lupa bahwa pada starter kit tersebut, tidak ada alat untuk mendecrypt nama dari file yang diencrypt menggunakan algoritma Base64. Oleh karena itu, bantulah Mafuyu untuk membuat sebuah directory karantina yang dapat mendecrypt nama file yang ada di dalamnya (Hint: gunakan daemon).
-Penggunaan:
-./starterkit --decrypt
+### 4. **Fungsi `return_from_quarantine()`**
+Fungsi ini digunakan untuk mengembalikan file yang telah dipindahkan ke `quarantine` ke direktori `starter_kit`.
+- Program memeriksa apakah file ada di direktori `quarantine`, lalu memindahkannya kembali ke `starter_kit` dengan `rename()`.
+![image](https://github.com/user-attachments/assets/f8ad5e1b-46d2-4971-91b7-e9bc6b1217bd)
 
-```bash
 
-```
+### 5. **Fungsi `eradicate_files()`**
+Fungsi ini digunakan untuk menghapus file yang ada di direktori `quarantine`.
+- Program akan memeriksa apakah file ada di direktori `quarantine` dan menghapusnya menggunakan `remove()`.
+![image](https://github.com/user-attachments/assets/bd79b7aa-dacb-444a-80b9-7bc520385390)
+
+
+### 6. **Fungsi `shutdown_decryption()`**
+Fungsi ini bertugas untuk mematikan proses daemon dekripsi dengan membaca PID dari file `decrypt.pid` dan menghentikan proses yang terkait menggunakan `kill()`.
+
+### 7. **Fungsi `log_activity()`**
+Fungsi ini bertanggung jawab untuk mencatat semua aktivitas program dalam file log `activity.log`. Setiap kali ada operasi yang dilakukan (seperti dekripsi, pemindahan file, penghapusan, dan shutdown), fungsi ini akan mencatatnya dengan timestamp dan jenis aksi yang dilakukan.
+![image](https://github.com/user-attachments/assets/7cbee99e-913f-402d-837c-4e91dc755d62)
+
+### 8. **Menangani Argumen Command Line**
+Program ini menggunakan `getopt_long()` untuk menangani berbagai opsi yang diberikan pengguna:
+- `--decrypt`: Memulai proses dekripsi file.
+- `--quarantine`: Memindahkan file yang telah didekripsi ke direktori `quarantine`.
+- `--return`: Mengembalikan file dari `quarantine` ke `starter_kit`.
+- `--eradicate`: Menghapus file di direktori `quarantine`.
+- `--shutdown`: Menghentikan proses daemon yang sedang berjalan.
 
 </div>
 
