@@ -8,6 +8,24 @@ Member :
 
 # Soal Modul 2
 
+Downlaod file starterkitnya terlebih dahulu dengan
+```bash
+wget "https://drive.usercontent.google.com/u/0/uc?id=1_5GxIGfQr3mNKuavJbte_AoRkEQLXSKS&export=download" -O File.zip
+```
+Setelah itu unzip filenya dengan 
+```bash
+unzip File.zip -d starter_kit
+```
+Lalu buatlah *file* starterkit.c
+```bash
+nano starterkit.c
+```
+setelah itu masukkan kodenya
+```bash
+a
+```
+berikut adalah codenya
+
 </div>
 
 ## Soal 4
