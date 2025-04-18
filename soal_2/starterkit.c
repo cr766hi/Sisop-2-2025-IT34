@@ -23,7 +23,7 @@ char* decode_base64(const char* input) {
     char* output = malloc(len);
     int val = 0, valb = -8;
     int pos = 0;
- printf("Decoding input: %s\n", input);
+    printf("Decoding input: %s\n", input);
 
     for (int i = 0; i < len; i++) {
         char* ptr = strchr(base64_map, input[i]);
@@ -42,19 +42,32 @@ char* decode_base64(const char* input) {
     return output;
 }
 
-
 // Fungsi untuk menulis log aktivitas
 void write_log(char *message) {
-    FILE *log = fopen("activity.log", "a");  //tidakk menimpa file yang ada
+    FILE *log = fopen("activity.log", "a");  
     if (log) {
         time_t now = time(NULL);
         struct tm *t = localtime(&now);
- fprintf(log, "[%02d-%02d-%d][%02d:%02d:%02d] - %s\n",
+        fprintf(log, "[%02d-%02d-%d][%02d:%02d:%02d] - %s\n",
             t->tm_mday, t->tm_mon + 1, t->tm_year + 1900,
             t->tm_hour, t->tm_min, t->tm_sec, message);
         fclose(log);
     } else {
         perror("Failed to open log file");
+    }
+}
+
+// Fungsi untuk memeriksa dan membuat direktori quarantine
+void create_quarantine_directory() {
+    struct stat st = {0};
+    if (stat(QUARANTINE_DIR, &st) == -1) {
+        if (mkdir(QUARANTINE_DIR, 0700) == 0) {
+            printf("Created quarantine directory.\n");
+            write_log("Created quarantine directory.");
+        } else {
+            perror("Failed to create quarantine directory");
+            exit(EXIT_FAILURE);
+        }
     }
 }
 
@@ -77,6 +90,10 @@ void quarantine_files() {
 
             if (rename(source_path, dest_path) == 0) {
                 printf("Moved '%s' to quarantine successfully.\n", entry->d_name);
+
+                char log_msg[512];
+                snprintf(log_msg, sizeof(log_msg), "Moved '%s' to quarantine.", entry->d_name);
+                write_log(log_msg);
             } else {
                 perror("Failed to move file");
             }
@@ -100,41 +117,14 @@ void return_files() {
             char src_path[512], dest_path[512];
 
             snprintf(src_path, sizeof(src_path), "%s/%s", QUARANTINE_DIR, entry->d_name);
- snprintf(dest_path, sizeof(dest_path), "%s/%s", STAGING_DIR, entry->d_name);
-
-
-                if (rename(src_path, dest_path) == 0) {
-                printf("Moved '%s' back to starter_kit successfully.\n", entry->d_name);
-                write_log("Moved file back to starter_kit successfully.");
-            } else {
-                perror("Failed to move file back to starter_kit");
-            }
-        }
-    }
-    closedir(dir);
-}
-
-
-// Fungsi untuk menghapus file di dalam karantina
-void eradicate_files() {
-    DIR *dir = opendir("quarantine");
-    if (!dir) {
-        printf("Error opening quarantine directory.\n");
-        return;
-    }
-
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        if (entry->d_type == DT_REG) {
-            char src_path[512], dest_path[512];
-
-            snprintf(src_path, sizeof(src_path), "%s/%s", QUARANTINE_DIR, entry->d_name);
             snprintf(dest_path, sizeof(dest_path), "%s/%s", STAGING_DIR, entry->d_name);
 
-
-                if (rename(src_path, dest_path) == 0) {
+            if (rename(src_path, dest_path) == 0) {
                 printf("Moved '%s' back to starter_kit successfully.\n", entry->d_name);
-                write_log("Moved file back to starter_kit successfully.");
+
+                char log_msg[512];
+                snprintf(log_msg, sizeof(log_msg), "Returned '%s' to starter_kit.", entry->d_name);
+                write_log(log_msg);
             } else {
                 perror("Failed to move file back to starter_kit");
             }
@@ -143,10 +133,9 @@ void eradicate_files() {
     closedir(dir);
 }
 
-
 // Fungsi untuk menghapus file di dalam karantina
 void eradicate_files() {
-    DIR *dir = opendir("quarantine");
+    DIR *dir = opendir(QUARANTINE_DIR);
     if (!dir) {
         printf("Error opening quarantine directory.\n");
         return;
@@ -156,11 +145,14 @@ void eradicate_files() {
     while ((entry = readdir(dir)) != NULL) {
         if (entry->d_type == DT_REG) {
             char file_path[512];
-            snprintf(file_path, sizeof(file_path), "quarantine/%s", entry->d_name);
+            snprintf(file_path, sizeof(file_path), "%s/%s", QUARANTINE_DIR, entry->d_name);
 
             if (remove(file_path) == 0) {
                 printf("Eradicated '%s' from quarantine.\n", entry->d_name);
-                write_log("Eradicated file from quarantine.");
+
+                char log_msg[512];
+                snprintf(log_msg, sizeof(log_msg), "Eradicated '%s' from quarantine.", entry->d_name);
+                write_log(log_msg);
             } else {
                 perror("Failed to eradicate file");
             }
@@ -177,7 +169,7 @@ void write_shutdown_log() {
 // Fungsi untuk menghentikan daemon jika ada
 void shutdown_daemon() {
     FILE *pidfile = fopen("decrypt.pid", "r");
-if (pidfile) {
+    if (pidfile) {
         int pid;
         fscanf(pidfile, "%d", &pid);
         fclose(pidfile);
@@ -190,11 +182,11 @@ if (pidfile) {
         }
     } else {
         printf("No daemon process found.\n");
+        write_log("No daemon process found during shutdown.");
     }
 }
 
 // Fungsi untuk menjalankan dekripsi
-
 int is_probably_base64(const char *str) {
     int len = strlen(str);
     if (len % 4 != 0) return 0;
@@ -202,13 +194,15 @@ int is_probably_base64(const char *str) {
     for (int i = 0; i < len; i++) {
         if (!isalnum(str[i]) && str[i] != '+' && str[i] != '/' && str[i] != '=') {
             return 0;
-            }
+        }
     }
     return 1;
 }
 
 void decrypt_files() {
-    DIR *dir = opendir("starter_kit");
+    create_quarantine_directory(); 
+
+    DIR *dir = opendir(STAGING_DIR);
     if (!dir) {
         perror("Failed to open starter_kit directory");
         return;
@@ -222,7 +216,7 @@ void decrypt_files() {
             }
 
             char old_path[512], new_path[512];
-            snprintf(old_path, sizeof(old_path), "starter_kit/%s", entry->d_name);
+            snprintf(old_path, sizeof(old_path), "%s/%s", STAGING_DIR, entry->d_name);
 
             char *decoded_name = decode_base64(entry->d_name);
             if (!decoded_name || strlen(decoded_name) == 0) {
@@ -230,9 +224,15 @@ void decrypt_files() {
                 continue;
             }
 
-            snprintf(new_path, sizeof(new_path), "starter_kit/%s", decoded_name);
+            snprintf(new_path, sizeof(new_path), "%s/%s", STAGING_DIR, decoded_name);
 
-            rename(old_path, new_path);
+            if (rename(old_path, new_path) == 0) {
+                char log_msg[512];
+                snprintf(log_msg, sizeof(log_msg), "Decrypted '%s' to '%s'.", entry->d_name, decoded_name);
+                write_log(log_msg);
+            } else {
+                perror("Failed to rename file during decryption");
+            }
 
             free(decoded_name);
         }
