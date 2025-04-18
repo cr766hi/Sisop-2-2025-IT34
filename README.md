@@ -47,6 +47,8 @@ Fungsi ini digunakan untuk menampilkan daftar proses yang dimiliki oleh user.
 
 Kemudian execute program dengan cara `./debugmon list <user>`.
 
+![show list](assets/list.png)
+
 ### b. 
 
 Fungsi do_daemon:
