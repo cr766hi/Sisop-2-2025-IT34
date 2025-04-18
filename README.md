@@ -8,6 +8,7 @@ Member :
 
 # Soal Modul 2
 
+### a.
 Downlaod file starterkitnya terlebih dahulu dengan
 ```bash
 wget "https://drive.usercontent.google.com/u/0/uc?id=1_5GxIGfQr3mNKuavJbte_AoRkEQLXSKS&export=download" -O File.zip
@@ -22,9 +23,57 @@ nano starterkit.c
 ```
 setelah itu masukkan kodenya
 ```bash
-a
+// Fungsi decode Base64
+char* decode_base64(const char* input) {
+    int len = strlen(input);
+    char* output = malloc(len);
+    int val = 0, valb = -8;
+    int pos = 0;
+    printf("Decoding input: %s\n", input);
+
+    for (int i = 0; i < len; i++) {
+        char* ptr = strchr(base64_map, input[i]);
+        if (!ptr) continue;
+        val = (val << 6) + (ptr - base64_map);
+        valb += 6;
+        if (valb >= 0) {
+            output[pos++] = (val >> valb) & 0xFF;
+            valb -= 8;
+        }
+    }
+    output[pos] = '\0';
+
+    printf("Decoded output: %s\n", output);  
+
+    return output;
+}
+
+// Fungsi untuk menulis log aktivitas
+void write_log(char *message) {
+    FILE *log = fopen("activity.log", "a");  
+    if (log) {
+        time_t now = time(NULL);
+        struct tm *t = localtime(&now);
+        fprintf(log, "[%02d-%02d-%d][%02d:%02d:%02d] - %s\n",
+            t->tm_mday, t->tm_mon + 1, t->tm_year + 1900,
+            t->tm_hour, t->tm_min, t->tm_sec, message);
+        fclose(log);
+    } else {
+        perror("Failed to open log file");
+    }
+}
 ```
-berikut adalah codenya
+berikut adalah codenya, decode_base64 mendekodekan string yang dienkode dengan Base64 menjadi data asli menggunakan tabel karakter Base64 dan mengembalikan hasilnya dalam bentuk string. Sedangkan fungsi write_log mencatat pesan log beserta timestamp ke dalam file activity.log 
+
+### b.
+
+Setelah mendownload starter kit tersebut, Mafuyu ternyata lupa bahwa pada starter kit tersebut, tidak ada alat untuk mendecrypt nama dari file yang diencrypt menggunakan algoritma Base64. Oleh karena itu, bantulah Mafuyu untuk membuat sebuah directory karantina yang dapat mendecrypt nama file yang ada di dalamnya (Hint: gunakan daemon).
+Penggunaan:
+./starterkit --decrypt
+
+```bash
+
+```
 
 </div>
 
