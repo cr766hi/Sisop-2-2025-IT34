@@ -100,6 +100,9 @@ Fungsi ini mengubah program menjadi daemon yang memantau proses user secara berk
 
 Kemudian execute program dengan cara `./debugmon daemon <user>`.
 
+![show daeomon](assets/daemon.png)
+![show daeomon(2)](assets/daemon(2).png)
+
 ### c. 
 
 Fungsi do_stop:
@@ -129,6 +132,10 @@ void do_stop() {
 Fungsi ini digunakan untuk menghentikan daemon debugmon yang sedang berjalan.
 
 Kemudian execute program dengan cara `./debugmon stop <user>`.
+
+![show stop](assets/stop.png)
+![show stop(2)](assets/stop(2).png)
+
 
 ### d. 
 
@@ -178,6 +185,8 @@ Fungsi ini dapat digunakan untuk menghentikan semua proses user secara paksa dan
 
 Kemudian execute program dengan cara `./debugmon fail <user>`.
 
+![show fail](assets/fail.png)
+
 ### e.
 
 Fungsi do_revert:
@@ -198,6 +207,9 @@ void do_revert(const char *user) {
 Dengan menggunakan fungsi ini, berkas indikator "fail" user dihapus. Fungsi ini mengeluarkan user dari mode "FAIL" dan memungkinkan daemon debugmon untuk dipantau kembali.
 
 Kemudian execute program dengan cara `./debugmon revert <user>`.
+
+![show revert](assets/revert.png)
+![show revert(2)](assets/revert(2).png)
 
 ### f.
 
